@@ -12,6 +12,11 @@ const routes = [
     name: "wish",
     component: () => import("../views/WishView.vue"), // Lazy loaded
   },
+  {
+    path: "/teacher/:teacher",
+    name: "teacher",
+    component: () => import("../views/TeacherView.vue"), // Lazy loaded
+  },
 ];
 
 const Router = createRouter({

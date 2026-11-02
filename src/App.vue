@@ -4,14 +4,19 @@
 <template>
   <nav>
     <ul>
-      <li>
+      <li class="nav-link">
         <RouterLink to="/">
           Home
         </RouterLink>
       </li>
-      <li>
+      <li class="nav-link">
         <RouterLink to="/wish/vtec">
           Wish
+        </RouterLink>
+      </li>
+      <li class="nav-link">
+        <RouterLink to="/teacher/vtec">
+          Teacher
         </RouterLink>
       </li>
     </ul>
@@ -20,3 +25,22 @@
     <RouterView/>
   </main>
 </template>
+
+<style scoped>
+ul {
+  display: flex;
+  justify-content: end;
+  gap: 1.5rem;  
+  list-style: none;
+}
+
+.nav-link {
+  font-family: var();
+  background-color: var(--color-yellow);
+  border: solid 1px var(--shadow);
+  border-radius: var(--radius-full);
+  padding: var(--space-xs) var(--space-lg);
+}
+
+
+</style>

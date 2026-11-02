@@ -84,15 +84,14 @@ onMounted(() => {
 
   // Use gsap.context for clean component lifecycle management in Vue
   ctx = gsap.context(() => {
-    if (!isMobile) {
-      Draggable.create(".decorative-note", {
-        type: "x,y",
-        bounds: isMobile ? undefined : ".decorative-board",
-        inertia: true,
-        edgeResistance: 0.3,
-      });
-    }
 
+    Draggable.create(".decorative-note", {
+      type: "x,y",
+      bounds: isMobile ? undefined : ".decorative-board",
+      inertia: true,
+      edgeResistance: 0.3,
+    });
+    
     // Magnetic pull tracking
     const handleMouseMove = (e) => {
       const rect = btn.getBoundingClientRect();
@@ -301,6 +300,7 @@ main {
 
 @media (max-width: 600px) {
   .letter-paper {
+    display: flex;
     width: calc(100% - 2rem);
     margin-top: 10rem;
     padding: 1.25rem 1rem;

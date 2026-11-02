@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 
 export function slugify(str) {
-    if (!str) return "must enter string"
+    if (!str) return
 
     return str
         .normalize('NFD')                    // Split combined letters (e.g., "ê" -> "e" + "^")
@@ -30,7 +30,7 @@ export async function readWishesForTeacher(teacherName) {
   const q = query(
     collection(db, "wishes"),
     where("targetSlugs", "array-contains", teacherName),
-    orderBy("createdAt", "desc"),
+    orderBy("createAt", "desc"),
   );
 
   const snapshot = await getDocs(q);
@@ -39,7 +39,7 @@ export async function readWishesForTeacher(teacherName) {
     ...wish.data(),
   }));
 
-  console.log("Successfully returned wishesForTeacher")
+  console.log("Successfully returned wishesForTeacher");
   return wishesForTeacher;
 }
 
