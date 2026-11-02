@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
-import { firebaseConfig } from "./firebaseConfig.js";
+import { firebaseConfig } from "./firebaseConfigLocal.js";
 import "firebase/firestore";// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);

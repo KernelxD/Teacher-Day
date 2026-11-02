@@ -2,7 +2,7 @@
 import WishForm from '../components/WishForm.vue';
 </script>
 <template>
-    <WishForm/>
+    <WishFormOld/>
 </template>
 <script scoped>
 </script>

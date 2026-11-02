@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted, reactive } from "vue";
 import { gsap } from "gsap";
+import { Draggable } from "gsap/Draggable";
+import InertiaPlugin from "gsap/InertiaPlugin";
 import TagInput from "./TagInput.vue";
 import FieldInput from "./FieldInput.vue";
 import { addWish } from "./Control.vue";
@@ -17,6 +19,8 @@ const errors = reactive({
 });
 
 let isValid = ref(false);
+
+const isMobile = window.innerWidth <= 600;
 
 const btnRef = ref(null);
 const txtRef = ref(null);
@@ -70,6 +74,9 @@ function handleSubmit() {
 }
 
 onMounted(() => {
+  gsap.registerPlugin(Draggable);
+  gsap.registerPlugin(InertiaPlugin);
+
   const btn = btnRef.value;
   const txt = txtRef.value;
 
@@ -77,6 +84,14 @@ onMounted(() => {
 
   // Use gsap.context for clean component lifecycle management in Vue
   ctx = gsap.context(() => {
+    if (!isMobile) {
+      Draggable.create(".decorative-note", {
+        type: "x,y",
+        bounds: isMobile ? undefined : ".decorative-board",
+        inertia: true,
+        edgeResistance: 0.3,
+      });
+    }
 
     // Magnetic pull tracking
     const handleMouseMove = (e) => {
@@ -129,49 +144,74 @@ onUnmounted(() => {
 </script>
 <template>
   <main>
-    <form class="container" @submit.prevent="handleSubmit">
-      <div class="form-section">
-        <label for="author">Tên người viết</label>
-        <FieldInput v-model="author" form-name="name" id="author" />
-        <label class="error-element">{{ errors.author }}</label>
+    <div class="decorative-board"></div>
+    <div class="letter-paper">
+      <div class="decorative-note" id="d1">
+        Ghi nhớ: Chia sẻ những lời chúc chân thành, không cần sử dụng A.I
       </div>
-      <div class="form-section">
-        <label for="message">Lời chúc của bạn tới thầy cô</label>
-        <textarea
-          placeholder="Enter your wishes"
-          v-model="message"
-          form-name="message"
-          id="message"
-        ></textarea>
-        <label class="error-element">{{ errors.message }}</label>
-      </div>
-      <div class="form-section">
-        <label for="teacher">Tên giáo viên cụ thể nếu muốn</label>
-        <TagInput v-model="tags" form-name="teacher" id="teacher" />
-        <label class="error-element">{{ errors.tags }}</label>
-      </div>
-      <!-- Attached ref="btnRef" to link element with script -->
-      <button ref="btnRef" class="submit-button" type="submit">
-        <label ref="txtRef" class="submit-button-label">Gửi lời chúc</label>
-      </button>
-    </form>
+      <div class="decorative-note" id="d2">Ghi đầy đủ họ tên và lời chúc
+Đảm bảo lời chúc lễ phép, tuân thủ nội quy Vinschool</div>
+      <form class="container" @submit.prevent="handleSubmit">
+        <div class="form-section">
+          <label for="author">Tên người viết</label>
+          <FieldInput v-model="author" form-name="name" id="author" />
+          <label class="error-element">{{ errors.author }}</label>
+        </div>
+        <div class="form-section">
+          <label for="message">Lời chúc của bạn tới thầy cô</label>
+          <textarea
+            placeholder="Enter your wishes"
+            v-model="message"
+            form-name="message"
+            id="message"
+          ></textarea>
+          <label class="error-element">{{ errors.message }}</label>
+        </div>
+        <div class="form-section">
+          <label for="teacher">Tên giáo viên cụ thể nếu muốn</label>
+          <TagInput v-model="tags" form-name="teacher" id="teacher" />
+          <label class="error-element">{{ errors.tags }}</label>
+        </div>
+        <!-- Attached ref="btnRef" to link element with script -->
+        <button ref="btnRef" class="submit-button" type="submit">
+          <label ref="txtRef" class="submit-button-label">Gửi lời chúc</label>
+        </button>
+      </form>
+    </div>
   </main>
 </template>
 <style scoped>
 main {
   display: flex;
+  position: relative;
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 100dvh; /* Uses full screen height on desktop & mobile browsers */
+  padding: 4rem 0;
   box-sizing: border-box;
+  margin-bottom: 10rem;
+}
+
+.letter-paper {
+  position: relative;
+  width: min(55%, 900px);
+  margin-top: 169px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-light);
+  box-sizing: border-box;
+  padding: 2rem 3rem;
+  border: 2px dashed var(--border);
+  font-size: 1rem;
 }
 
 .container {
   display: flex;
-  width: 80%;
+  width: 100%;
   flex-direction: column;
   gap: var(--space-md);
+  /* padding: 2rem; */
 }
 
 .form-section {
@@ -214,5 +254,73 @@ main {
   display: inline-block;
   pointer-events: none;
   will-change: transform;
+}
+
+.decorative-board {
+  position: absolute;
+  background-color: #e4b083;
+  z-index: -2;
+  top: 60%;
+  left: 50%;
+  /* Center the board precisely, then add your subtle tilt */
+  transform: translate(-50%, -50%) rotate(-2.5deg);
+  width: 90%;
+  height: 90%;
+  max-width: 1200px;
+  max-height: 800px;
+  pointer-events: none;
+  border-radius: 1.5rem;
+  border: var(--text) solid 2px;
+  box-shadow: 4px 10px 15px 3px rgba(0, 0, 0, 0.38);
+}
+
+.decorative-note {
+  position: absolute;
+  z-index: 0;
+  width: 12rem;
+  height: 14rem;
+  padding: 1.5rem;
+  border: solid 3px var(--shadow);
+  font-weight: 400;
+  box-shadow: 5px 3px 0px 0px oklch(19.061% 0.1105 264.016);
+}
+
+#d1 {
+  background-color: var(--color-pink);
+  top: -2rem;
+  left: -11rem;
+  transform: rotate(-5deg);
+}
+
+#d2 {
+  background-color: var(--color-green);
+  bottom: -5rem;
+  right: -10rem;
+  transform: rotate(5deg);
+}
+
+@media (max-width: 600px) {
+  .letter-paper {
+    width: calc(100% - 2rem);
+    margin-top: 10rem;
+    padding: 1.25rem 1rem;
+  }
+
+  .decorative-board {
+    width: 100%;
+    height: calc(100% - 5rem);
+  }
+
+  .decorative-note {
+    top: 1rem;
+    left: 1rem;
+    /* width: calc(100% - 1000rem); */
+    /* height: auto; */
+    min-height: 0;
+  }
+
+  .d2 {
+    right: 1rem;
+  }
 }
 </style>
