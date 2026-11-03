@@ -57,7 +57,7 @@ function validateForm() {
     isValid.value = false;
   }
 
-  return isValid;
+  return isValid.value;
 }
 
 function handleSubmit() {

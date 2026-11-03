@@ -1,8 +1,7 @@
 <script setup>
-import WishForm from '../components/WishForm.vue';
+import WishForm from "../components/WishForm.vue";
 </script>
+
 <template>
-    <WishFormOld/>
+  <WishForm />
 </template>
-<script scoped>
-</script>

@@ -35,7 +35,7 @@ ul {
 }
 
 .nav-link {
-  font-family: var();
+  font-family: var(--font-main);
   background-color: var(--color-yellow);
   border: solid 1px var(--shadow);
   border-radius: var(--radius-full);
