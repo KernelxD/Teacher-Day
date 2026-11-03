@@ -26,3 +26,6 @@ dist-ssr
 # Firebase & Environment Configuration
 src/firebaseConfigLocal.js
 .env
+
+# Local AI assistant notes
+CLAUDE.md
