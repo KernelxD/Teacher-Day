@@ -1,8 +1,11 @@
 <script setup>
+import { useRoute } from "vue-router";
+
+const route = useRoute();
 </script>
 
 <template>
-  <nav>
+  <nav v-if="!route.meta.fullscreen">
     <ul>
       <li class="nav-link">
         <RouterLink to="/">

@@ -6,6 +6,7 @@ const routes = [
     path: "/",
     name: "home",
     component: HomeView,
+    meta: { fullscreen: true }, // the wishing tree fills the screen, so App.vue hides its nav
   },
   {
     path: "/wish/:invite",
