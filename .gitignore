@@ -29,3 +29,6 @@ src/firebaseConfigLocal.js
 
 # Local AI assistant notes
 CLAUDE.md
+
+# Firebase deploy cache
+.firebase/
