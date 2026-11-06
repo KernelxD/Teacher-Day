@@ -1,50 +1,48 @@
-@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+
 @font-face {
   font-family: "Horizon";
-  src: url(./assets/fonts/Horizon.otf);
+  src: url("./assets/fonts/Horizon.otf") format("opentype");
+  font-display: swap;
 }
 
 :root {
-  --bg-dark: oklch(0.92 0.04 264);
-  --bg: oklch(0.96 0.04 264);
   --bg-light: oklch(1 0.04 264);
   --text: oklch(0.15 0.08 264);
   --text-muted: oklch(0.4 0.08 264);
-  --highlight: oklch(1 0.08 264);
   --border: oklch(0.6 0.08 264);
   --border-muted: oklch(0.7 0.08 264);
-  --primary: oklch(0.4 0.1 264);
-  --secondary: oklch(0.4 0.1 84);
   --danger: oklch(0.5 0.08 30);
-  --warning: oklch(0.5 0.08 100);
-  --success: oklch(0.5 0.08 160);
-  --info: oklch(0.5 0.08 260);
 
-  --color-paper: oklch(0.9769 0.0185 100.12);
   --color-blue: oklch(0.9481 0.0498 207.26);
   --color-yellow: oklch(0.9621 0.0877 100.88);
   --color-pink: oklch(0.9332 0.0504 334.17);
   --color-green: oklch(0.9674 0.0565 144.34);
 
-  --shadow: oklch(19.061% 0.1105 264.016);
+  --ink: oklch(19.061% 0.1105 264.016);
+  --shadow-sm: 1px 1px 0 0 var(--ink);
+  --shadow-md: 2px 3px 0 0 var(--ink);
+  --shadow-lg: 5px 3px 0 0 var(--ink);
+  --shadow-inset: inset 0 1px 2px 0 rgb(37 89 141);
 
   --font-main: "Montserrat", sans-serif;
+  --font-display: "Horizon", sans-serif;
 
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
-  --space-xl: 32px;
 
   --radius-sm: 4px;
   --radius-md: 6px;
-  --radius-lg: 12px;
   --radius-full: 9999px;
 
-  --transition-fast: 0.15s ease;
+  --transition: 0.4s ease;
 }
 
-* {
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -60,37 +58,70 @@ body,
 }
 
 body {
-  background: #ffffff;
-  overflow-x: hidden; /* Stops horizontal scrollbars */
-  margin: 0;
-  /* background: linear-gradient(135deg in oklch, oklch(85.43% 0.0648 305.16) 0.0%, oklch(86.26% 0.0680 309.01) 20.0%, oklch(88.31% 0.0583 341.38) 40.0%, oklch(89.97% 0.0528 32.97) 60.0%, oklch(90.75% 0.0715 84.74) 80.0%, oklch(91.34% 0.1047 115.29) 100.0%); */
-  /* background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(232, 250, 255, 1) 62%, rgba(192, 242, 255, 1) 76%, rgba(110, 226, 255, 1) 100%); */
-}
-
-/* html,
-body,
-#app {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  min-height: 100vh;
-} */
-
-::placeholder {
-  color: --text-muted;
-}
-
-.monseratt-regular,
-div {
-  font-family: "Montserrat", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 400;
-  font-style: normal;
+  background-color: #fff;
+  font-family: var(--font-main);
 }
 
 label {
   color: var(--text-muted);
   font-size: 1rem;
+}
+
+::placeholder {
+  color: var(--text-muted);
+}
+
+.field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  min-height: 45px;
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--text);
+  background-color: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-inset);
+}
+
+.field__input {
+  flex: 1;
+  min-width: 120px;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background-color: transparent;
+  border: none;
+  outline: none;
+}
+
+.submit-button {
+  display: inline-block;
+  align-self: center;
+  margin-top: 1rem;
+  padding: 1rem 2rem;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--text-muted);
+  background-color: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  will-change: transform;
+  transition: background-color var(--transition);
+}
+
+.submit-button:hover {
+  background-color: var(--color-yellow);
+}
+
+.submit-button-label {
+  display: inline-block;
+  color: inherit;
+  pointer-events: none;
+  will-change: transform;
 }
 
 .error-element {

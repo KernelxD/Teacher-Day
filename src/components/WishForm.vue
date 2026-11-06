@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, reactive } from "vue";
 import { gsap } from "gsap";
 import { Draggable } from "gsap/Draggable";
 import InertiaPlugin from "gsap/InertiaPlugin";
+import PopFX from "./PopFX.vue";
 import TagInput from "./TagInput.vue";
 import FieldInput from "./FieldInput.vue";
 import { addWish } from "./Control.vue";
@@ -21,6 +22,9 @@ const errors = reactive({
 let isValid = ref(false);
 
 const isMobile = window.innerWidth <= 600;
+
+const PopFXRef = ref(null)
+let btnColor = "var(--color-yellow)"
 
 const btnRef = ref(null);
 const txtRef = ref(null);
@@ -70,7 +74,13 @@ function handleSubmit() {
   };
 
   addWish(payload);
+  PopFXRef.value?.play();
   console.log(payload);
+}
+
+const container = document.querySelector(".pop-container")
+function handleClick() {
+  btnColor = "var(--color-blue)";
 }
 
 onMounted(() => {
@@ -78,6 +88,7 @@ onMounted(() => {
   gsap.registerPlugin(InertiaPlugin);
 
   const btn = btnRef.value;
+  // const btn = document.querySelectorAll('.magneticBtn')
   const txt = txtRef.value;
 
   if (!btn || !txt) return;
@@ -157,6 +168,11 @@ onUnmounted(() => {
           <label class="error-element">{{ errors.author }}</label>
         </div>
         <div class="form-section">
+          <label for="teacher">Gửi tới: </label>
+          <TagInput v-model="tags" form-name="teacher" id="teacher" />
+          <label class="error-element">{{ errors.tags }}</label>
+        </div>
+        <div class="form-section">
           <label for="message">Lời chúc của bạn tới thầy cô</label>
           <textarea
             placeholder="Enter your wishes"
@@ -166,14 +182,10 @@ onUnmounted(() => {
           ></textarea>
           <label class="error-element">{{ errors.message }}</label>
         </div>
-        <div class="form-section">
-          <label for="teacher">Tên giáo viên cụ thể nếu muốn</label>
-          <TagInput v-model="tags" form-name="teacher" id="teacher" />
-          <label class="error-element">{{ errors.tags }}</label>
-        </div>
         <!-- Attached ref="btnRef" to link element with script -->
-        <button ref="btnRef" class="submit-button" type="submit">
+        <button ref="btnRef" class="submit-button" type="submit" @click="handleClick" :style="{  backgroundColor: btnColor }">
           <label ref="txtRef" class="submit-button-label">Gửi lời chúc</label>
+          <PopFX ref="PopFXRef"/>
         </button>
       </form>
     </div>
@@ -181,36 +193,35 @@ onUnmounted(() => {
 </template>
 <style scoped>
 main {
-  display: flex;
   position: relative;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   padding: 4rem 0;
-  box-sizing: border-box;
   margin-bottom: 10rem;
 }
 
 .letter-paper {
   position: relative;
-  width: min(55%, 900px);
-  margin-top: 169px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--bg-light);
-  box-sizing: border-box;
+  width: min(55%, 900px);
+  margin-top: 169px;
   padding: 2rem 3rem;
-  border: 2px dashed var(--border);
   font-size: 1rem;
+  background-color: var(--bg-light);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
 }
 
 .container {
   display: flex;
-  width: 100%;
   flex-direction: column;
   gap: var(--space-md);
-  /* padding: 2rem; */
+  width: 100%;
 }
 
 .form-section {
@@ -221,56 +232,39 @@ main {
 
 #message {
   width: 100%;
-  min-height: 120px; /* Adjust height as needed */
-  padding: var(--space-sm);
-  background-color: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  min-height: 120px;
+  padding: 2rem 2rem 2rem 4rem;
   font-family: inherit;
   font-size: 1rem;
-  resize: vertical; /* Allows vertical resizing while keeping width fixed */
-  box-sizing: border-box;
-  outline: none;
-}
-
-.submit-button {
-  font-family: inherit;
-  font-size: 1rem;
+  line-height: 2rem;
   color: var(--text);
   background-color: var(--bg-light);
-  align-self: center;
-  cursor: pointer;
-  padding: 1rem 2rem;
-  border: solid 1px var(--border);
+  background-image:
+    linear-gradient(to right, transparent 3.5rem, #ff8080 3.5rem, #ff8080 3.6rem, transparent 3.6rem),
+    repeating-linear-gradient(transparent, transparent calc(2rem - 1px), #a1c4fd calc(2rem - 1px), #a1c4fd 2rem);
+  background-size: 100% 2rem;
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  display: inline-block;
-  will-change: transform; /* Optimizes GSAP transform rendering */
-  margin-top: 1rem;
-}
-
-.submit-button-label {
-  display: inline-block;
-  pointer-events: none;
-  will-change: transform;
+  box-shadow: var(--shadow-inset);
+  outline: none;
+  resize: vertical;
 }
 
 .decorative-board {
   position: absolute;
-  background-color: #e4b083;
   z-index: -2;
   top: 60%;
   left: 50%;
-  /* Center the board precisely, then add your subtle tilt */
-  transform: translate(-50%, -50%) rotate(-2.5deg);
   width: 90%;
   height: 90%;
   max-width: 1200px;
   max-height: 800px;
-  pointer-events: none;
+  background-color: #e4b083;
+  border: 2px solid var(--text);
   border-radius: 1.5rem;
-  border: var(--text) solid 2px;
   box-shadow: 4px 10px 15px 3px rgba(0, 0, 0, 0.38);
+  transform: translate(-50%, -50%) rotate(-2.5deg);
+  pointer-events: none;
 }
 
 .decorative-note {
@@ -279,28 +273,27 @@ main {
   width: 12rem;
   height: 14rem;
   padding: 1.5rem;
-  border: solid 3px var(--shadow);
   font-weight: 400;
-  box-shadow: 5px 3px 0px 0px oklch(19.061% 0.1105 264.016);
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow-lg);
 }
 
 #d1 {
-  background-color: var(--color-pink);
   top: -2rem;
   left: -11rem;
+  background-color: var(--color-pink);
   transform: rotate(-5deg);
 }
 
 #d2 {
-  background-color: var(--color-green);
-  bottom: -5rem;
   right: -10rem;
+  bottom: -5rem;
+  background-color: var(--color-green);
   transform: rotate(5deg);
 }
 
 @media (max-width: 600px) {
   .letter-paper {
-    display: flex;
     width: calc(100% - 2rem);
     margin-top: 10rem;
     padding: 1.25rem 1rem;
@@ -309,18 +302,6 @@ main {
   .decorative-board {
     width: 100%;
     height: calc(100% - 5rem);
-  }
-
-  .decorative-note {
-    top: 1rem;
-    left: 1rem;
-    /* width: calc(100% - 1000rem); */
-    /* height: auto; */
-    min-height: 0;
-  }
-
-  .d2 {
-    right: 1rem;
   }
 }
 </style>

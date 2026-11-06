@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 
 const formName = defineProps({ formName: String });
 
@@ -7,9 +7,17 @@ const placeholder = `Enter your ${formName.formName}'s name`;
 const newTag = ref("");
 const tags = defineModel({type: Array, default: () => []});
 
+const pastelColors = [
+  '#ffadad', // Pastel Red
+  '#ffd6a5', // Pastel Orange
+  '#fdffb6', // Pastel Yellow
+  '#caffbf', // Pastel Green
+  '#9bf6ff', // Pastel Cyan
+]
+
 function isValidName (str){
   const regex = /^[^\p{P}\p{S}\d]+$/u;
-  
+
   // Trim spaces and test the name
   return regex.test(str.trim());
 }
@@ -36,65 +44,44 @@ function removeLastTag() {
     tags.value.pop();
   }
 }
+
+onMounted(() => {
+  tags.value.push("Tất cả thầy cô");
+})
 </script>
 <template>
-  <div class="tag-input">
-    <div v-for="(tag, index) in tags" :key="tag" class="tag">
+  <div class="field">
+    <div
+      v-for="(tag, index) in tags"
+      :key="tag"
+      class="tag"
+      :style="{ backgroundColor: pastelColors[index % pastelColors.length] }"
+    >
       {{ tag }}
-      <span @click="removeTag(index)">&times;</span>
+      <span class="tag-remove" @click="removeTag(index)">&times;</span>
     </div>
     <input
       v-model="newTag"
       @keydown="addTag"
       @keydown.delete="removeLastTag"
-      class="tag-input-field"
+      class="field__input"
       type="text"
-      :placeholder
     />
   </div>
 </template>
 <style scoped>
-/* :global(:root) {
-
-} */
-.tag-input {
-  color: var(--text);
-  background-color: var(--bg);
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  border: solid 1px var(--border);
-  border-radius: var(--space-sm);
-  min-height: 45px;
-  padding: var(--space-xs) var(--space-sm);
-  width: 100%;
-  box-sizing: border-box; /* box-sizing: border-box includes the padding and border when calculating the size */
-}
-
-.tag-input-field {
-  font-family: inherit;
-  font-size: 1rem;
-  color: var(--text);
-  flex: 1;
-  border: none;
-  background-color: var(--bg);
-  outline: none;
-  min-width: 120px; /*Keep the input useable even if the tags fill the row */
-}
-
 .tag {
   display: inline-flex;
   align-items: center;
-  background: var(--bg-light);
-  border: solid 1px var(--border-muted);
-  border-radius: var(--radius-sm);
-  /* box-shadow: 1px 1px 0px 0px var(--primary); */
-  padding: var(--space-xs) var(--space-sm);
   gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  background-color: var(--bg-light);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
 }
 
-.tag > span {
+.tag-remove {
   cursor: pointer;
 }
 </style>

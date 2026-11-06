@@ -4,18 +4,18 @@
 <template>
   <nav>
     <ul>
-      <li class="nav-link">
-        <RouterLink to="/">
+      <li>
+        <RouterLink class="nav-link" to="/">
           Home
         </RouterLink>
       </li>
-      <li class="nav-link">
-        <RouterLink to="/wish/vtec">
+      <li>
+        <RouterLink class="nav-link" to="/wish/vtec">
           Wish
         </RouterLink>
       </li>
-      <li class="nav-link">
-        <RouterLink to="/teacher/vtec">
+      <li>
+        <RouterLink class="nav-link" to="/teacher/vtec">
           Teacher
         </RouterLink>
       </li>
@@ -27,20 +27,33 @@
 </template>
 
 <style scoped>
-ul {
+nav {
+  margin-bottom: 1rem;
+}
+
+nav ul {
   display: flex;
-  justify-content: end;
-  gap: 1.5rem;  
+  justify-content: flex-end;
+  gap: 1.5rem;
+  padding: 1rem;
   list-style: none;
 }
 
 .nav-link {
-  font-family: var(--font-main);
-  background-color: var(--color-yellow);
-  border: solid 1px var(--shadow);
+  padding: var(--space-sm) var(--space-md);
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid transparent;
   border-radius: var(--radius-full);
-  padding: var(--space-xs) var(--space-lg);
+  transition:
+    color var(--transition),
+    background-color var(--transition),
+    border-color var(--transition);
 }
 
-
+.nav-link:hover {
+  color: #fff;
+  background-color: var(--color-yellow);
+  border-color: var(--ink);
+}
 </style>
