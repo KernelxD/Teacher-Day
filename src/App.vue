@@ -3,7 +3,7 @@
 
 <template>
   <nav>
-    <ul>
+    <ul class="glass-card">
       <li>
         <RouterLink class="nav-link" to="/">
           Home
@@ -28,32 +28,64 @@
 
 <style scoped>
 nav {
-  margin-bottom: 1rem;
+  position: sticky;
+  top: 1.25rem;
+  z-index: 90;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 1.5rem;
+  margin-bottom: 2rem;
+  pointer-events: none;
 }
 
 nav ul {
+  pointer-events: auto;
   display: flex;
-  justify-content: flex-end;
-  gap: 1.5rem;
-  padding: 1rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
   list-style: none;
+  background: var(--bg-card);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+
+nav ul:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
 }
 
 .nav-link {
-  padding: var(--space-sm) var(--space-md);
-  color: inherit;
+  display: inline-block;
+  padding: 0.45rem 1.15rem;
+  color: var(--ink);
   text-decoration: none;
-  border: 1px solid transparent;
+  font-weight: 700;
+  font-size: 0.92rem;
+  border: 2px solid transparent;
   border-radius: var(--radius-full);
-  transition:
-    color var(--transition),
-    background-color var(--transition),
-    border-color var(--transition);
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .nav-link:hover {
-  color: #fff;
+  background-color: var(--color-blue);
+  border-color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  transform: translate(-1px, -1px);
+}
+
+.nav-link.router-link-active {
   background-color: var(--color-yellow);
   border-color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 600px) {
+  nav {
+    justify-content: center;
+    padding: 0 0.5rem;
+  }
 }
 </style>

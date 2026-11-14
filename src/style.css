@@ -7,23 +7,33 @@
 }
 
 :root {
-  --bg-light: oklch(1 0.04 264);
-  --text: oklch(0.15 0.08 264);
-  --text-muted: oklch(0.4 0.08 264);
-  --border: oklch(0.6 0.08 264);
-  --border-muted: oklch(0.7 0.08 264);
-  --danger: oklch(0.5 0.08 30);
+  /* Warm cream paper canvas */
+  --bg-page: #FAF7F2;
+  --bg-light: #FAF7F2;
+  --bg-card: #FFFFFF;
+  --text: #18283B;
+  --text-muted: #5B6B7C;
+  --border: #18283B;
+  --border-muted: rgba(24, 40, 59, 0.2);
+  --danger: #EF4444;
 
-  --color-blue: oklch(0.9481 0.0498 207.26);
-  --color-yellow: oklch(0.9621 0.0877 100.88);
-  --color-pink: oklch(0.9332 0.0504 334.17);
-  --color-green: oklch(0.9674 0.0565 144.34);
+  /* Signature Pastel Pop Palette */
+  --color-yellow: #FDE68A;
+  --color-pink: #FDA4AF;
+  --color-blue: #BAE6FD;
+  --color-green: #A7F3D0;
+  --color-purple: #DDD6FE;
 
-  --ink: oklch(19.061% 0.1105 264.016);
-  --shadow-sm: 1px 1px 0 0 var(--ink);
-  --shadow-md: 2px 3px 0 0 var(--ink);
-  --shadow-lg: 5px 3px 0 0 var(--ink);
-  --shadow-inset: inset 0 1px 2px 0 rgb(37 89 141);
+  --color-deepblue: #38BDF8;
+  --color-lightblue: #BAE6FD;
+  --color-shadowblue: #E0F2FE;
+
+  --ink: #18283B;
+  --shadow-sm: 2px 2px 0 0 var(--ink);
+  --shadow-md: 4px 4px 0 0 var(--ink);
+  --shadow-lg: 6px 6px 0 0 var(--ink);
+  --shadow-press: 1px 1px 0 0 var(--ink);
+  --shadow-inset: inset 2px 2px 0 0 rgba(24, 40, 59, 0.1);
 
   --font-main: "Montserrat", sans-serif;
   --font-display: "Horizon", sans-serif;
@@ -33,11 +43,12 @@
   --space-md: 16px;
   --space-lg: 24px;
 
-  --radius-sm: 4px;
-  --radius-md: 6px;
+  --radius-sm: 6px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
   --radius-full: 9999px;
 
-  --transition: 0.4s ease;
+  --transition: 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 *,
@@ -58,17 +69,22 @@ body,
 }
 
 body {
-  background-color: #fff;
+  background-color: var(--bg-page);
+  background-image: radial-gradient(rgba(24, 40, 59, 0.12) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
   font-family: var(--font-main);
+  color: var(--ink);
 }
 
 label {
   color: var(--text-muted);
-  font-size: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 ::placeholder {
   color: var(--text-muted);
+  opacity: 0.7;
 }
 
 .field {
@@ -77,13 +93,20 @@ label {
   align-items: center;
   gap: var(--space-sm);
   width: 100%;
-  min-height: 45px;
+  min-height: 48px;
   padding: var(--space-xs) var(--space-sm);
   color: var(--text);
-  background-color: var(--bg-light);
-  border: 1px solid var(--border);
+  background-color: var(--bg-card);
+  border: 2px solid var(--ink);
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-inset);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+
+.field:hover,
+.field:focus-within {
+  box-shadow: var(--shadow-md);
+  transform: translate(-1px, -1px);
 }
 
 .field__input {
@@ -101,20 +124,29 @@ label {
   display: inline-block;
   align-self: center;
   margin-top: 1rem;
-  padding: 1rem 2rem;
+  padding: 0.85rem 2rem;
   font-family: inherit;
   font-size: 1rem;
-  color: var(--text-muted);
-  background-color: var(--bg-light);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  font-weight: 700;
+  color: var(--ink);
+  background-color: var(--color-yellow);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
   cursor: pointer;
   will-change: transform;
-  transition: background-color var(--transition);
+  transition: transform var(--transition), box-shadow var(--transition), background-color var(--transition);
 }
 
 .submit-button:hover {
-  background-color: var(--color-yellow);
+  background-color: #FCD34D;
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.submit-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-press);
 }
 
 .submit-button-label {
@@ -129,4 +161,15 @@ label {
   align-self: flex-start;
   font-size: 0.85rem;
   color: var(--danger);
+  font-weight: 600;
+}
+
+/* Neo-Brutalist Card Surface */
+.glass-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  transition: transform var(--transition), box-shadow var(--transition);
 }

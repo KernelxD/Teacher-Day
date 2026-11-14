@@ -3,12 +3,25 @@ import { onMounted, onUnmounted, ref } from "vue";
 import gsap from "gsap";
 import SplitText from "gsap/SplitText";
 import WishForm from "../components/WishForm.vue";
+import Magnetic from "../components/Magnetic.vue";
+import RailToc from "../components/RailToc.vue";
 
 gsap.registerPlugin(SplitText);
+
+const tocItems = [
+  { id: "hero", label: "20/11 VTEC", depth: 0 },
+  { id: "invitation", label: "Lời mở đầu", depth: 1 },
+  { id: "wish-section", label: "Gửi lời chúc", depth: 0 },
+];
 
 const heroRef = ref(null);
 const titleEl = ref(null);
 const subEl = ref(null);
+const wishSectionRef = ref(null);
+
+function scrollToForm() {
+  wishSectionRef.value?.scrollIntoView({ behavior: "smooth" });
+}
 
 let split, tween, ro, lastW = 0;
 
@@ -57,25 +70,38 @@ onUnmounted(() => {
 });
 </script>
 
-<template>
-  <section class="hero" ref="heroRef">
+<template>  
+  <!-- <RailToc :items="tocItems" title="Mục lục" /> -->
+  <section class="hero" id="hero" ref="heroRef">
     <div class="decorative-blob b1"></div>
     <div class="decorative-blob b2"></div>
     <div class="hero-text">
       <div class="top">
-        <h3 id="t-1" class="subtitle1">VTEC</h3>
-        <h3 id="t-2" class="subtitle1">xin chúc mừng</h3>
+        <Magnetic as="h3" id="t-1" class="subtitle1 glass-card">VTEC</Magnetic>
+        <Magnetic as="h3" id="t-2" class="subtitle1 glass-card">xin chúc mừng</Magnetic>
       </div>
       <h1 ref="titleEl" class="title">20/11</h1>
       <h2 ref="subEl" class="subtitle2">Ngày nhà giáo Việt Nam</h2>
     </div>
   </section>
-  <section class="wish-view-new">
+  <div class="magnetic-container" id="invitation">
+    <Magnetic text="Gửi lời chúc ngay" class="glass-card" @click="scrollToForm" />
+  </div>
+  <section class="wish-view-new" id="wish-section" ref="wishSectionRef">
     <WishForm />
   </section>
 </template>
 
 <style scoped>
+.magnetic-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 2.5rem 0;
+  position: relative;
+  z-index: 5;
+}
+
 .hero {
   position: relative;
 }
@@ -83,23 +109,25 @@ onUnmounted(() => {
 .decorative-blob {
   position: absolute;
   z-index: -2;
-  height: 45rem;
-  filter: blur(100px);
+  height: 35rem;
+  filter: blur(80px);
+  opacity: 0.25;
+  pointer-events: none;
 }
 
 .b1 {
-  top: -10rem;
-  left: -10rem;
-  width: min(100% - 1rem, 1000px);
-  background-color: oklch(83.79% 0.09886 357.502);
-  transform: translate(-50%, -50%);
+  top: -6rem;
+  left: -6rem;
+  width: min(100% - 1rem, 750px);
+  background-color: var(--color-blue);
+  transform: translate(-30%, -30%);
 }
 
 .b2 {
-  top: 7rem;
-  right: 0;
-  width: min(70% - 2rem, 700px);
-  background-color: oklch(97.321% 0.0596 100.251);
+  top: 8rem;
+  right: -5rem;
+  width: min(70% - 2rem, 600px);
+  background-color: var(--color-yellow);
 }
 
 .hero-text {
@@ -123,10 +151,13 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--space-sm);
-  padding: var(--space-xs) var(--space-lg);
-  font-size: 1.8rem;
-  border: 1px solid var(--ink);
+  padding: 0.35rem 1.4rem;
+  font-size: 1.4rem;
+  border: 2px solid var(--ink);
   border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  font-weight: 700;
+  color: var(--ink);
 }
 
 #t-1 {
@@ -138,6 +169,7 @@ onUnmounted(() => {
 }
 
 .hero-text h1 {
+  color: var(--ink);
   width: fit-content;
   margin-inline: auto;
   font-family: var(--font-display);
@@ -145,16 +177,18 @@ onUnmounted(() => {
   font-weight: 900;
   line-height: 1;
   text-transform: uppercase;
+  letter-spacing: -0.02em;
 }
 
 .hero-text h2 {
+  color: var(--ink);
   display: flex;
   justify-content: space-between;
   width: var(--title-w, 100%);
   font-size: calc(clamp(2rem, 7vw, 4.5rem) * var(--sub-scale, 1));
-  font-weight: 700;
-  letter-spacing: -0.3rem;
-  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.2rem;
+  line-height: 1.1;
   white-space: nowrap;
 }
 
@@ -168,7 +202,7 @@ onUnmounted(() => {
   }
 
   .hero-text h3 {
-    font-size: clamp(0.85rem, 4vw, 1.8rem);
+    font-size: clamp(0.85rem, 4vw, 1.2rem);
   }
 }
 </style>
