@@ -16,12 +16,12 @@ const invitedBy = "VTEC";
 const tags = ref([]); //selected teacher
 
 const fontOptions = [
+  { id: "modern", name: "Chuẩn mực" },
   { id: "handwriting", name: "Nắn nót" },
   { id: "cursive", name: "Bay bổng" },
   { id: "typewriter", name: "Đánh máy" },
-  { id: "modern", name: "Chuẩn mực" },
 ];
-const selectedFont = ref("handwriting");
+const selectedFont = ref("modern");
 
 const errors = reactive({
   author: "",
@@ -153,7 +153,7 @@ onUnmounted(() => {
           <label class="error-element">{{ errors.author }}</label>
         </div>
         <div class="form-section">
-          <label for="teacher">Gửi tới: </label>
+          <label for="teacher">Gửi tới (Ghi cụ thể tên thầy cô rồi ấn enter) </label>
           <TagInput v-model="tags" form-name="teacher" id="teacher" />
           <label class="error-element">{{ errors.tags }}</label>
         </div>

@@ -17,10 +17,22 @@ const pastelColors = [
 
 const quickSuggestions = [
   "Tất cả thầy cô",
-  "Cô chủ nhiệm",
-  "Thầy hiệu trưởng",
-  "Thầy cô bộ môn",
+  "Ban giám hiệu",
+  "Tổ Toán",
+  "Tổ Ngữ văn",
+  "Tổ Ngoại ngữ",
+  "Tổ Vật lí",
+  "Tổ Hóa học",
+  "Tổ Sinh học",
+  "Tổ Lịch sử",
+  "Tổ Địa lí",
+  "Tổ GDKT & PL",
+  "Tổ Tin học",
+  "Tổ Công nghệ",
+  "Tổ Thể dục - QP",
+  "Tổ Nghệ thuật",
 ];
+
 
 function isValidName(str) {
   const regex = /^[^\p{P}\p{S}\d]+$/u;
