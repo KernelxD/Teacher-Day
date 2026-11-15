@@ -15,7 +15,7 @@
         </RouterLink>
       </li>
       <li>
-        <RouterLink class="nav-link" to="/teacher/vtec">
+        <RouterLink class="nav-link" to="/teacher/tat-ca-thay-co">
           Teacher
         </RouterLink>
       </li>

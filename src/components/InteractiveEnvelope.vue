@@ -256,7 +256,9 @@ function toggleOpen() {
   color: var(--ink);
   white-space: pre-line;
   margin-bottom: 0.75rem;
-  word-break: break-all;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: normal;
 }
 
 .font-cursive.letter-content {

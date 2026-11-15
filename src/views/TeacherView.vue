@@ -8,13 +8,16 @@ import gsap from "gsap";
 
 const route = useRoute();
 
-const targetSlug = computed(() => route.params.teacher || "vtec");
+const targetSlug = computed(() => route.params.teacher || "tat-ca-thay-co");
 const teacherData = ref([]);
 const isLoading = ref(true);
 
 const teacherName = computed(() => {
-  if (teacherData.value.length > 0 && Array.isArray(teacherData.value[0].target)) {
-    return teacherData.value[0].target[0];
+  if (teacherData.value.length > 0 ) {
+    const firstWish = teacherData.value[0]
+    const teacherIndex = firstWish.targetSlugs.indexOf(targetSlug.value);
+    return teacherIndex !== -1 ? firstWish.target[teacherIndex] : firstWish.target[0];
+
   }
   return "Thầy Cô";
 });
@@ -25,13 +28,15 @@ onMounted(async () => {
     teacherData.value = await readWishesForTeacher(targetSlug.value);
     console.log("Teacher wishes loaded:", teacherData.value);
 
+    isLoading.value = false;
+
     // Stagger-animate envelopes in after they render
     if (teacherData.value.length > 0) {
       await nextTick();
       gsap.from(".wish-container > *", {
         y: 45, opacity: 0, scale: 0.95,
         duration: 0.55, stagger: 0.1,
-        ease: "power2.out",
+        ease: "power2.out", clearProps: "transform,opacity", 
       });
     }
   } catch (error) {
