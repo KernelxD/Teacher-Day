@@ -21,7 +21,7 @@ const props = defineProps({
   // Default text when no slot is passed
   text: {
     type: String,
-    default: "Gửi lời chúc ngay ✨",
+    default: "Gửi lời chúc ngay",
   },
   // Custom class for the wrapper
   customClass: {

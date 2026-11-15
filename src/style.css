@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@500;600;700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Patrick+Hand&display=swap");
 
 @font-face {
   font-family: "Horizon";
@@ -37,6 +37,9 @@
 
   --font-main: "Montserrat", sans-serif;
   --font-display: "Horizon", sans-serif;
+  --font-handwriting: "Patrick Hand", cursive, sans-serif;
+  --font-cursive: "Dancing Script", cursive, sans-serif;
+  --font-typewriter: "Courier Prime", monospace;
 
   --space-xs: 4px;
   --space-sm: 8px;
@@ -173,3 +176,124 @@ label {
   position: relative;
   transition: transform var(--transition), box-shadow var(--transition);
 }
+
+/* Custom Font Styles for Wishes */
+.font-handwriting {
+  font-family: var(--font-handwriting) !important;
+  letter-spacing: 0.02em;
+}
+
+.font-cursive {
+  font-family: var(--font-cursive) !important;
+  letter-spacing: 0.03em;
+}
+
+.font-typewriter {
+  font-family: var(--font-typewriter) !important;
+  letter-spacing: 0.01em;
+}
+
+.font-modern {
+  font-family: var(--font-main) !important;
+}
+
+/* Basica.co.jp Inspired Colorful Marker Text Highlight */
+.marker-text {
+  position: relative;
+  display: inline;
+  color: #ffffff;
+  font-weight: inherit;
+  white-space: nowrap;
+}
+
+/* Subtle variant — pastel sweep, text keeps parent color */
+.marker-text.is-subtle {
+  color: inherit;
+}
+.marker-text.is-subtle .marker-layer3 {
+  background: none;
+  padding-left: 0;
+  padding-right: 0.1em;
+}
+
+.marker-text .marker-layer1,
+.marker-text .marker-layer2,
+.marker-text .marker-layer3 {
+  position: relative;
+  display: inline;
+  background-repeat: no-repeat;
+  background-size: 0 100%;
+  background-position: 0;
+  transition: background-size 0.55s cubic-bezier(0.76, 0.01, 0.18, 0.99);
+}
+
+.marker-text.is-active .marker-layer1,
+.marker-text:hover .marker-layer1 {
+  transition-delay: 0s;
+  background-size: 100% 100%;
+}
+
+.marker-text.is-active .marker-layer2,
+.marker-text:hover .marker-layer2 {
+  transition-delay: 0.06s;
+  background-size: 100% 100%;
+}
+
+.marker-text.is-active .marker-layer3,
+.marker-text:hover .marker-layer3 {
+  transition-delay: 0.12s;
+  background-size: 100% 100%;
+}
+
+.marker-layer1 {
+  background: linear-gradient(
+    transparent 12%,
+    var(--marker-color-1, #77d6f2) 12%,
+    var(--marker-color-1, #77d6f2) 92%,
+    transparent 92%
+  );
+}
+
+.marker-layer2 {
+  background: linear-gradient(
+    transparent 12%,
+    var(--marker-color-2, #f17ac0) 12%,
+    var(--marker-color-2, #f17ac0) 92%,
+    transparent 92%
+  );
+}
+
+.marker-layer3 {
+  background: linear-gradient(
+    transparent 12%,
+    #18283b 0,
+    #18283b 92%,
+    transparent 0
+  );
+  padding-left: 0.25em;
+  padding-right: 0.35em;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   SQUIGGLY WAVY UNDERLINE UTILITY
+   ============================================================ */
+.squiggle {
+  text-decoration: underline wavy;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+  text-decoration-color: var(--squiggle-color, #FCD34D);
+}
+
+/* ============================================================
+   BLOB FLOAT ANIMATION (used in HomeView)
+   ============================================================ */
+@keyframes blobFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%       { transform: translateY(-18px) scale(1.04); }
+}
+@keyframes blobFloat2 {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%       { transform: translateY(14px) scale(0.97); }
+}
+

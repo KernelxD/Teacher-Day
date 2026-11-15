@@ -8,11 +8,20 @@ import TagInput from "./TagInput.vue";
 import FieldInput from "./FieldInput.vue";
 import { addWish } from "./Control.vue";
 import Magnetic from "./Magnetic.vue";
+import MarkerText from "./MarkerText.vue";
 
 const author = ref("");
 const message = ref("");
 const invitedBy = "VTEC";
 const tags = ref([]); //selected teacher
+
+const fontOptions = [
+  { id: "handwriting", name: "Nắn nót" },
+  { id: "cursive", name: "Bay bổng" },
+  { id: "typewriter", name: "Đánh máy" },
+  { id: "modern", name: "Chuẩn mực" },
+];
+const selectedFont = ref("handwriting");
 
 const errors = reactive({
   author: "",
@@ -68,6 +77,7 @@ function handleSubmit() {
     invitedBy: invitedBy || null,
     message: message.value,
     target: tags.value,
+    fontStyle: selectedFont.value,
   };
 
   addWish(payload);
@@ -87,6 +97,22 @@ onMounted(() => {
     // Initialize sticky note rotation with GSAP so dragging preserves tilt
     gsap.set("#d1", { rotation: -5 });
     gsap.set("#d2", { rotation: 5 });
+
+    // ── Entrance animations ───────────────────────────────────
+    // Letter paper slides up from below
+    gsap.from(".letter-paper", {
+      y: 55, opacity: 0,
+      duration: 0.8, ease: "power3.out",
+      delay: 0.1,
+    });
+
+    // Sticky notes fly in from above, staggered
+    gsap.from(".decorative-note", {
+      y: -28, opacity: 0,
+      duration: 0.65, stagger: 0.18,
+      ease: "back.out(1.5)",
+      delay: 0.05,
+    });
 
     Draggable.create(".decorative-note", {
       type: "x,y",
@@ -118,8 +144,7 @@ onUnmounted(() => {
       </div>
       <div class="decorative-note" id="d2">
         <div class="washi-tape"></div>
-        Ghi đầy đủ họ tên và lời chúc
-        Đảm bảo lời chúc lễ phép, tuân thủ nội quy Vinschool
+        Ghi đầy đủ họ tên và lời chúc. Đảm bảo lời chúc lễ phép, tuân thủ <MarkerText color1="#FDA4AF" color2="#FDE68A" :subtle="true">nội quy Vinschool</MarkerText>
       </div>
       <form class="container" @submit.prevent="handleSubmit">
         <div class="form-section">
@@ -132,23 +157,50 @@ onUnmounted(() => {
           <TagInput v-model="tags" form-name="teacher" id="teacher" />
           <label class="error-element">{{ errors.tags }}</label>
         </div>
+
         <div class="form-section">
-          <label for="message">Lời chúc của bạn tới thầy cô</label>
+          <div class="message-header-row">
+            <label for="message">Lời chúc của bạn tới <MarkerText color1="#77D6F2" color2="#FDE68A" :subtle="true">thầy cô</MarkerText></label>
+
+            <!-- Custom Font Selector -->
+            <div class="font-selector">
+              <span class="font-selector-title">Kiểu chữ:</span>
+              <div class="font-chips">
+                <button
+                  v-for="font in fontOptions"
+                  :key="font.id"
+                  type="button"
+                  class="font-chip"
+                  :class="[
+                    'font-' + font.id,
+                    { 'is-active': selectedFont === font.id },
+                  ]"
+                  @click="selectedFont = font.id"
+                >
+                  <span>{{ font.name }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <textarea
-            placeholder="Enter your wishes"
+            placeholder="Viết những lời tri ân sâu sắc nhất tới thầy cô..."
             v-model="message"
             form-name="message"
             id="message"
+            :class="'font-' + selectedFont"
           ></textarea>
           <label class="error-element">{{ errors.message }}</label>
         </div>
+
         <div class="button-container">
-          <Magnetic as="button"
-          class="submit-button glass-card"
-          type="submit"
-          @click="handleClick"
-          text='Gửi lời chúc'>
-          </Magnetic>
+          <Magnetic
+            as="button"
+            class="submit-button glass-card"
+            type="submit"
+            @click="handleClick"
+            text="Gửi lời chúc"
+          />
           <PopFX ref="PopFXRef" />
         </div>
       </form>
@@ -195,12 +247,65 @@ main {
   gap: var(--space-sm);
 }
 
+.message-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.font-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.font-selector-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.font-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.font-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--bg-card);
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius-full);
+  box-shadow: 1px 1px 0 0 var(--ink);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.font-chip:hover {
+  background: var(--color-yellow);
+  transform: translateY(-1px);
+}
+
+.font-chip.is-active {
+  background: var(--color-yellow);
+  box-shadow: 2px 2px 0 0 var(--ink);
+  border-width: 2px;
+}
+
 #message {
   width: 100%;
-  min-height: 120px;
+  min-height: 140px;
   padding: 2rem 2rem 2rem 4rem;
-  font-family: inherit;
-  font-size: 1rem;
+  font-size: 1.15rem;
   line-height: 2rem;
   color: var(--text);
   background-color: var(--bg-card);
@@ -214,6 +319,14 @@ main {
   resize: vertical;
   box-shadow: var(--shadow-sm);
   transition: box-shadow var(--transition), transform var(--transition);
+}
+
+#message.font-cursive {
+  font-size: 1.35rem;
+}
+
+#message.font-typewriter {
+  font-size: 1rem;
 }
 
 #message:hover,
@@ -231,7 +344,7 @@ main {
   height: 90%;
   max-width: 1200px;
   max-height: 800px;
-  background-color: #E6B894;
+  background-color: #e6b894;
   border: 3px solid var(--ink);
   border-radius: 1.5rem;
   box-shadow: 6px 8px 0px 0px var(--ink);
@@ -279,7 +392,6 @@ main {
 /* Partially lifted effect with angled shadow for #d1 (bottom-left lifted) */
 #d1::after {
   box-shadow: 2px 2px 2px var(--shadow-md);
-
   content: "";
   position: absolute;
   z-index: -1;
@@ -324,7 +436,10 @@ main {
 
 .button-container {
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 600px) {
@@ -337,6 +452,11 @@ main {
   .decorative-board {
     width: 100%;
     height: calc(100% - 5rem);
+  }
+
+  .message-header-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

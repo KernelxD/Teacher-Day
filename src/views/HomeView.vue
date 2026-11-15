@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, ref, nextTick } from "vue";
 import gsap from "gsap";
 import SplitText from "gsap/SplitText";
 import WishForm from "../components/WishForm.vue";
 import Magnetic from "../components/Magnetic.vue";
 import RailToc from "../components/RailToc.vue";
+import MarkerText from "../components/MarkerText.vue";
 
 gsap.registerPlugin(SplitText);
 
@@ -61,6 +62,22 @@ onMounted(async () => {
   rebuild();
   ro = new ResizeObserver(rebuild); // fires when 20vw / the font changes the width
   ro.observe(titleEl.value);
+
+  // ── Entrance animations ──────────────────────────────────────
+
+  // h1 date slides up
+  gsap.from(titleEl.value, {
+    y: 70, opacity: 0,
+    duration: 0.8, ease: "power3.out",
+    delay: 0.08,
+  });
+
+  // CTA button fades up with a slight delay
+  gsap.from(".magnetic-container", {
+    y: 26, opacity: 0,
+    duration: 0.65, ease: "power2.out",
+    delay: 0.42,
+  });
 });
 
 onUnmounted(() => {
@@ -81,7 +98,7 @@ onUnmounted(() => {
         <Magnetic as="h3" id="t-2" class="subtitle1 glass-card">xin chúc mừng</Magnetic>
       </div>
       <h1 ref="titleEl" class="title">20/11</h1>
-      <h2 ref="subEl" class="subtitle2">Ngày nhà giáo Việt Nam</h2>
+      <h2 ref="subEl" class="subtitle2"><MarkerText color1="#77D6F2" color2="#F17AC0">Ngày nhà giáo Việt Nam</MarkerText></h2>
     </div>
   </section>
   <div class="magnetic-container" id="invitation">
@@ -121,6 +138,7 @@ onUnmounted(() => {
   width: min(100% - 1rem, 750px);
   background-color: var(--color-blue);
   transform: translate(-30%, -30%);
+  animation: blobFloat 9s ease-in-out infinite;
 }
 
 .b2 {
@@ -128,6 +146,7 @@ onUnmounted(() => {
   right: -5rem;
   width: min(70% - 2rem, 600px);
   background-color: var(--color-yellow);
+  animation: blobFloat2 11s ease-in-out infinite;
 }
 
 .hero-text {
@@ -178,6 +197,10 @@ onUnmounted(() => {
   line-height: 1;
   text-transform: uppercase;
   letter-spacing: -0.02em;
+  /* Squiggly yellow underline — the signature visual accent */
+  text-decoration: underline wavy #FCD34D;
+  text-decoration-thickness: 5px;
+  text-underline-offset: clamp(6px, 1.2vw, 18px);
 }
 
 .hero-text h2 {
