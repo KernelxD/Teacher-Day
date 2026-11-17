@@ -26,10 +26,10 @@ const quickSuggestions = [
   "Tổ Sinh học",
   "Tổ Lịch sử",
   "Tổ Địa lí",
-  "Tổ GDKT & PL",
+  "Tổ GDKTPL",
   "Tổ Tin học",
   "Tổ Công nghệ",
-  "Tổ Thể dục - QP",
+  "Tổ Thể dục",
   "Tổ Nghệ thuật",
 ];
 
