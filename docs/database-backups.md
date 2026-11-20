@@ -1,6 +1,10 @@
 # Cloud wishes backups
 
 Backups run in the private GitHub repository **trawngson/Teacher-Day-Backups**.
+
+**Turned off on 20 November 2026.** The "Back up wishes" workflow is disabled, so no new
+snapshots are made. Earlier snapshots stay in the repository. To resume, open its Actions tab,
+pick **Back up wishes** and choose **Enable workflow**.
 Your Mac does not need to be on. No Firebase billing upgrade, service-account key,
 encryption key, Cloud Functions, or Cloud Storage bucket is needed.
 
