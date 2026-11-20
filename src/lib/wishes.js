@@ -1,4 +1,6 @@
 // Small helpers shared by the wishing tree components.
+import { TEACHER_CAMPUSES } from "./teacherDirectory.js";
+import { PINNED_RECIPIENTS } from "./recipientGroups.js";
 
 export const ACCENT = "#F5A43A";
 
@@ -29,6 +31,14 @@ export function joinNames(list) {
   return list.slice(0, -1).join(", ") + " và " + list[list.length - 1];
 }
 
+export function summarizeRecipients(names, currentTeacher) {
+  const unique = [...new Map(names.map((name) => [teacherKey(name), clean(name)])).values()];
+  const current = unique.findIndex((name) => teacherKey(name) === teacherKey(currentTeacher));
+  if (current > 0) unique.unshift(...unique.splice(current, 1));
+  if (unique.length <= 3) return joinNames(unique);
+  return `${unique.slice(0, 3).join(", ")} … + ${unique.length - 3} thầy cô khác`;
+}
+
 // "Nguyễn Minh An" -> "MA"
 export function initials(name) {
   const parts = String(name).trim().split(/\s+/);
@@ -44,6 +54,67 @@ export function isValidName(str) {
 // Trim and collapse repeated spaces.
 export function clean(str) {
   return String(str || "").trim().replace(/\s+/g, " ");
+}
+
+export function formatWishAuthor(wish) {
+  const name = clean(wish.name);
+  const studentClass = clean(wish.studentClass);
+  return studentClass ? `${name} (${studentClass})` : name;
+}
+
+// Teacher identity preserves Vietnamese accents; casing and extra spaces are ignored.
+export function teacherKey(name) {
+  return clean(name).normalize("NFC").toLocaleLowerCase("vi");
+}
+
+export function wishTargetsTeacher(wish, teacher) {
+  const key = teacherKey(teacher);
+  return !!key && wish.to.some((name) => teacherKey(name) === key);
+}
+
+// Count each wish once per teacher, even if a recipient appears with different casing.
+export function groupWishesByTeacher(wishes) {
+  const groups = new Map();
+  for (const wish of wishes) {
+    const seen = new Set();
+    for (const name of wish.to) {
+      const key = teacherKey(name);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      if (!groups.has(key)) groups.set(key, { key, name: clean(name).normalize("NFC"), wishes: [] });
+      groups.get(key).wishes.push(wish);
+    }
+  }
+  return groups;
+}
+
+// The school-wide and department groups stay first; teachers follow campus and wish count.
+export function boardTeachers(wishes, preferredCampus = "") {
+  const pinnedOrder = new Map(PINNED_RECIPIENTS.map((name, index) => [teacherKey(name), index]));
+  const confirmedCampuses = new Map(Object.entries(TEACHER_CAMPUSES).map(([name, campus]) => [teacherKey(name), campus]));
+  return [...groupWishesByTeacher(wishes).values()]
+    .map(({ key, name, wishes }) => ({
+      key, name, count: wishes.length, pinned: pinnedOrder.has(key),
+      campuses: pinnedOrder.has(key) ? [] : confirmedCampuses.has(key) ? [confirmedCampuses.get(key)]
+        : [...new Set(wishes.map((wish) => clean(wish.campus)).filter(Boolean))].sort((a, b) => a.localeCompare(b, "vi")),
+    }))
+    .sort((a, b) => Number(b.pinned) - Number(a.pinned)
+      || (a.pinned && b.pinned ? pinnedOrder.get(a.key) - pinnedOrder.get(b.key) : 0)
+      || Number(b.campuses.includes(preferredCampus)) - Number(a.campuses.includes(preferredCampus))
+      || b.count - a.count || a.name.localeCompare(b.name, "vi"));
+}
+
+export function filterWishes(wishes, { query = "", teacher = "", campus = "" } = {}) {
+  const q = fold(query);
+  const allowed = teacher || campus ? new Set(boardTeachers(wishes)
+    .filter((entry) => (!teacher || entry.key === teacher)
+      && (!campus || entry.pinned || entry.campuses.includes(campus)))
+    .map((entry) => entry.key)) : null;
+  return wishes.filter((wish) => {
+    const matchesQuery = !q || fold(formatWishAuthor(wish)).includes(q)
+      || fold(wish.content).includes(q) || wish.to.some((name) => fold(name).includes(q));
+    return matchesQuery && (!allowed || wish.to.some((name) => allowed.has(teacherKey(name))));
+  });
 }
 
 // Lowercase without Vietnamese accents, for search. Not the same as slugify().

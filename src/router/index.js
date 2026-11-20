@@ -18,6 +18,13 @@ const routes = [
     name: "teacher",
     component: () => import("../views/TeacherView.vue"), // Lazy loaded
   },
+  {
+    // The link-preview image. scripts/og-image.mjs screenshots this page; it isn't linked anywhere.
+    path: "/og",
+    name: "og",
+    component: () => import("../views/OgView.vue"),
+    meta: { fullscreen: true },
+  },
 ];
 
 const Router = createRouter({

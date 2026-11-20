@@ -9,10 +9,11 @@ import TreeScene from "../components/tree/TreeScene.vue";
 import WishReader from "../components/tree/WishReader.vue";
 import WishBoard from "../components/tree/WishBoard.vue";
 import WishComposer from "../components/tree/WishComposer.vue";
-import { addWish, readAllWishes, slugify } from "../components/Control.vue";
+import { addWish, readAllWishes } from "../components/Control.vue";
 import { buildSampleWishes } from "../lib/sampleWishes.js";
 import { TAG_SPOTS } from "../lib/tree.js";
-import { ACCENT, MINE_COLOR, PALETTE, fold } from "../lib/wishes.js";
+import { ACCENT, MINE_COLOR, PALETTE, boardTeachers, clean, filterWishes, groupWishesByTeacher } from "../lib/wishes.js";
+import { suggestCampus } from "../lib/campus.js";
 
 const route = useRoute();
 const demo = "demo" in route.query;
@@ -33,12 +34,19 @@ const sendError = ref("");
 
 const query = ref("");
 const teacher = ref("");
+const campusFilter = ref("");
+const preferredCampus = ref("");
 const board = ref(null);
+const teacherOptions = computed(() => [...groupWishesByTeacher(wishes.value).values()]
+  .map(({ name }) => name).sort((a, b) => a.localeCompare(b, "vi")));
+const teacherCampuses = computed(() => Object.fromEntries(boardTeachers(wishes.value).map(({ key, campuses }) => [key, campuses])));
 
 function fromFirestore(doc) {
   return {
     id: doc.id,
     name: doc.author || "",
+    studentClass: clean(doc.studentClass),
+    campus: clean(doc.campus),
     to: Array.isArray(doc.target) ? doc.target : [],
     content: doc.message || "",
   };
@@ -46,6 +54,8 @@ function fromFirestore(doc) {
 
 onMounted(async () => {
   window.addEventListener("keydown", onKeydown);
+  // Start on visit, independently of loading wishes or opening the composer.
+  suggestCampus().then((campus) => { preferredCampus.value = campus; });
   if (demo) {
     wishes.value = buildSampleWishes();
     loading.value = false;
@@ -74,15 +84,9 @@ const toneById = computed(() => {
   return tones;
 });
 
-const filtered = computed(() => {
-  const q = fold(query.value);
-  return wishes.value.filter((wish) => {
-    const matchesQuery =
-      !q || fold(wish.name).includes(q) || fold(wish.content).includes(q) || wish.to.some((t) => fold(t).includes(q));
-    const matchesTeacher = !teacher.value || wish.to.some((t) => (slugify(t) || fold(t)) === teacher.value);
-    return matchesQuery && matchesTeacher;
-  });
-});
+const filtered = computed(() => filterWishes(wishes.value, {
+  query: query.value, teacher: teacher.value, campus: campusFilter.value,
+}));
 
 // Previous / next in the reader walk through the board's results when the board is open.
 const readList = computed(() => (boardOpen.value ? filtered.value : wishes.value));
@@ -119,14 +123,14 @@ function openComposer(teacherName = null) {
   composing.value = true;
 }
 
-async function hangWish({ name, to, content }) {
+async function hangWish({ name, campus = "", to, content }) {
   sending.value = true;
   sendError.value = "";
   try {
     const id = demo
       ? "mine-" + Date.now()
-      : await addWish({ author: name, message: content, target: to, invitedBy: "VTEC" });
-    wishes.value = [...wishes.value, { id, name, to, content }];
+      : await addWish({ author: name, campus, message: content, target: to, invitedBy: "VTEC" });
+    wishes.value = [...wishes.value, { id, name, campus, to, content }];
     mineId.value = id;
     composing.value = false;
     composeFor.value = null;
@@ -154,6 +158,7 @@ function onKeydown(event) {
       :wishes="wishes"
       :mine-id="mineId"
       :tone-by-id="toneById"
+      :preferred-campus="preferredCampus"
       :peek-enabled="openId === null && !composing && !boardOpen"
       @open="openId = $event"
     />
@@ -204,6 +209,8 @@ function onKeydown(event) {
       ref="board"
       v-model:query="query"
       v-model:teacher="teacher"
+      v-model:campus="campusFilter"
+      :preferred-campus="preferredCampus"
       :all="wishes"
       :filtered="filtered"
       :mine-id="mineId"
@@ -231,6 +238,8 @@ function onKeydown(event) {
         :preset-teacher="composeFor"
         :sending="sending"
         :send-error="sendError"
+        :teacher-options="teacherOptions"
+        :teacher-campuses="teacherCampuses"
         @close="composing = false"
         @submit="hangWish"
       />
@@ -265,6 +274,13 @@ button {
 .tree-home :deep(:focus-visible) {
   outline: 3px solid #231B42;
   outline-offset: 3px;
+}
+
+/* These controls use their rounded field wrapper's focus ring. */
+.tree-home :deep(.field input:focus-visible),
+.tree-home :deep(.field select:focus-visible),
+.tree-home :deep(textarea.field:focus-visible) {
+  outline: none;
 }
 
 .masthead {

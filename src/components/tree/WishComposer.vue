@@ -1,20 +1,28 @@
 <script setup>
 // "Viết lời chúc": the form for hanging a new wish on the tree.
 // It only checks the input and emits "submit"; HomeView saves the wish to Firestore.
-import { computed, nextTick, onActivated, onMounted, ref } from "vue";
+import { nextTick, onActivated, onMounted, ref } from "vue";
 import { ACCENT, clean, isValidName } from "../../lib/wishes.js";
+import { isValidTeacherName, resolveTeacherName, uniqueTeacherNames } from "../../lib/teachers.js";
+import TeacherNameInput from "../TeacherNameInput.vue";
+import TeacherTitleReminder from "../TeacherTitleReminder.vue";
+import { CAMPUSES } from "../../lib/campus.js";
+import { useCampusSelection } from "../../lib/useCampusSelection.js";
 
 const props = defineProps({
   presetTeacher: { type: String, default: null },
   sending: { type: Boolean, default: false },
   sendError: { type: String, default: "" },
+  teacherOptions: { type: Array, default: () => [] },
+  teacherCampuses: { type: Object, default: () => ({}) },
 });
 const emit = defineEmits(["close", "submit"]);
 
 const MAX_LENGTH = 300;
-const TEACHER_ERROR = "Tên thầy cô chỉ gồm chữ cái, không có số hay ký hiệu.";
+const TEACHER_ERROR = "Tên thầy cô chỉ gồm chữ cái; có thể thêm môn học hoặc vai trò trong ngoặc.";
 
 const name = ref("");
+const { campus, markCampusChosen } = useCampusSelection();
 const draft = ref("");
 const tags = ref([]);
 const content = ref("");
@@ -34,31 +42,20 @@ function applyPreset() {
 onMounted(applyPreset);
 onActivated(applyPreset);
 
-function addDraftTag() {
-  const value = clean(draft.value);
+function addDraftTag(input = draft.value) {
+  const value = resolveTeacherName(input, props.teacherOptions);
   if (!value) return;
-  if (!isValidName(value)) {
+  if (!isValidTeacherName(value)) {
     errors.value = { ...errors.value, to: TEACHER_ERROR };
     return;
   }
-  if (!tags.value.includes(value)) tags.value = [...tags.value, value];
+  tags.value = uniqueTeacherNames([...tags.value, value], props.teacherOptions);
   draft.value = "";
   errors.value = { ...errors.value, to: "" };
 }
 
 function removeTag(i) {
   tags.value = tags.value.filter((_, j) => j !== i);
-}
-
-function onTeacherKey(event) {
-  // Vietnamese keyboards (Telex, VNI) are still composing a letter: let them finish.
-  if (event.isComposing) return;
-  if (event.key === "Enter" || event.key === ",") {
-    event.preventDefault();
-    addDraftTag();
-  } else if (event.key === "Backspace" && draft.value === "" && tags.value.length) {
-    tags.value = tags.value.slice(0, -1);
-  }
 }
 
 function submit() {
@@ -69,13 +66,14 @@ function submit() {
   else if (!isValidName(author)) next.name = "Tên chỉ gồm chữ cái, không có số hay ký hiệu.";
 
   // A teacher name typed but not confirmed with Enter still counts.
-  const to = [...tags.value];
+  let to = [...tags.value];
   const pending = clean(draft.value);
   if (pending) {
-    if (isValidName(pending)) {
+    if (isValidTeacherName(pending)) {
       if (!to.includes(pending)) to.push(pending);
     } else next.to = TEACHER_ERROR;
   }
+  to = uniqueTeacherNames(to, props.teacherOptions);
   if (!next.to && to.length === 0) next.to = "Hãy thêm ít nhất một thầy cô nhé.";
 
   const message = content.value.trim();
@@ -86,14 +84,9 @@ function submit() {
   errors.value = next;
   if (next.name || next.to || next.content) return;
 
-  emit("submit", { name: author, to, content: message });
+  emit("submit", { name: author, campus: campus.value, to, content: message });
 }
 
-const hint = computed(() => ({
-  name: errors.value.name || "Ghi đầy đủ họ tên để thầy cô biết bạn là ai.",
-  to: errors.value.to || "Nhấn Enter sau mỗi tên. Có thể gửi cho nhiều thầy cô.",
-  content: errors.value.content || "Viết bằng lời của chính bạn, ngắn thôi cũng được.",
-}));
 </script>
 
 <template>
@@ -116,7 +109,7 @@ const hint = computed(() => ({
         </aside>
       </div>
 
-      <form class="form" role="dialog" aria-modal="true" aria-labelledby="compose-title" novalidate @submit.prevent="submit">
+      <form class="form" role="dialog" aria-modal="true" aria-labelledby="compose-title" novalidate @submit.prevent="submit()">
         <div class="form-head">
           <h2 id="compose-title">Viết lời chúc</h2>
           <button type="button" class="round" aria-label="Đóng" @click="emit('close')">
@@ -127,23 +120,39 @@ const hint = computed(() => ({
         <div class="group">
           <label for="w-name" class="label">Tên của bạn</label>
           <div class="field" :class="{ invalid: errors.name }">
-            <input id="w-name" ref="nameInput" v-model="name" type="text" autocomplete="name" placeholder="Họ và tên" aria-describedby="w-name-hint" @input="errors = { ...errors, name: '' }" />
+            <input id="w-name" ref="nameInput" v-model="name" type="text" autocomplete="name" :aria-describedby="errors.name ? 'w-name-error' : undefined" @input="errors = { ...errors, name: '' }" />
           </div>
-          <p id="w-name-hint" class="hint" :class="{ error: errors.name }" aria-live="polite">{{ hint.name }}</p>
+          <p v-if="errors.name" id="w-name-error" class="hint error" aria-live="polite">{{ errors.name }}</p>
         </div>
 
         <div class="group">
-          <label for="w-to" class="label">Gửi tới</label>
-          <div class="field chips-field" :class="{ invalid: errors.to }">
-            <span v-for="(tag, i) in tags" :key="tag" class="chip">
-              {{ tag }}
-              <button type="button" class="chip-remove" :aria-label="`Bỏ ${tag}`" @click="removeTag(i)">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#231B42" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-              </button>
-            </span>
-            <input id="w-to" v-model="draft" type="text" autocomplete="off" placeholder="Ví dụ: Cô Lan" aria-describedby="w-to-hint" @keydown="onTeacherKey" />
+          <div class="recipient-row">
+            <div class="group">
+              <label for="w-to" class="label">Gửi tới</label>
+              <div class="field chips-field" :class="{ invalid: errors.to }">
+                <span v-for="(tag, i) in tags" :key="tag" class="chip">
+                  {{ tag }}
+                  <button type="button" class="chip-remove" :aria-label="`Bỏ ${tag}`" @click="removeTag(i)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#231B42" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                  </button>
+                </span>
+                <TeacherNameInput id="w-to" v-model="draft" :options="teacherOptions" :selected="tags" :campus="campus" :campuses-by-teacher="teacherCampuses"
+                  :described-by="errors.to ? 'w-to-error' : undefined" :invalid="!!errors.to" @commit="addDraftTag" @remove-last="tags = tags.slice(0, -1)" />
+              </div>
+              <p v-if="errors.to" id="w-to-error" class="hint error" aria-live="polite">{{ errors.to }}</p>
+            </div>
+            <div class="group">
+              <label for="w-campus" class="label">Cơ sở</label>
+              <div class="field campus-field">
+                <select id="w-campus" v-model="campus" @change="markCampusChosen">
+                  <option value="">Chọn cơ sở</option>
+                  <option v-for="option in CAMPUSES" :key="option" :value="option">{{ option }}</option>
+                </select>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+              </div>
+            </div>
           </div>
-          <p id="w-to-hint" class="hint" :class="{ error: errors.to }" aria-live="polite">{{ hint.to }}</p>
+          <TeacherTitleReminder />
         </div>
 
         <div class="group">
@@ -160,10 +169,10 @@ const hint = computed(() => ({
             rows="4"
             :maxlength="MAX_LENGTH"
             placeholder="Điều bạn muốn nói với thầy cô…"
-            aria-describedby="w-content-hint"
+            :aria-describedby="errors.content ? 'w-content-error' : undefined"
             @input="errors = { ...errors, content: '' }"
           ></textarea>
-          <p id="w-content-hint" class="hint" :class="{ error: errors.content }" aria-live="polite">{{ hint.content }}</p>
+          <p v-if="errors.content" id="w-content-error" class="hint error" aria-live="polite">{{ errors.content }}</p>
         </div>
 
         <p v-if="sendError" class="send-error" role="alert">{{ sendError }}</p>
@@ -187,6 +196,7 @@ div {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
   color: inherit;
@@ -342,6 +352,42 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.recipient-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.6fr);
+  align-items: start;
+  gap: 12px;
+}
+
+.recipient-row .group {
+  min-width: 0;
+}
+
+.campus-field {
+  position: relative;
+  min-height: 56px;
+}
+
+.campus-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 24px 0 4px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.campus-field svg {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
 }
 
 .label {

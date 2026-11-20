@@ -1,7 +1,7 @@
 <script setup>
 // One wish shown as a letter pinned to the screen, with buttons for the previous and next wish.
 import { computed, onMounted, ref } from "vue";
-import { joinNames, mix } from "../../lib/wishes.js";
+import { formatWishAuthor, joinNames, mix } from "../../lib/wishes.js";
 
 const props = defineProps({
   wish: { type: Object, required: true },
@@ -51,7 +51,7 @@ onMounted(() => closeButton.value?.focus());
         <div class="lines">
           <h2 id="read-title" class="greeting">Gửi {{ joinNames(wish.to) }},</h2>
           <p class="content">{{ wish.content }}</p>
-          <p class="signature">{{ wish.name }}</p>
+          <p class="signature">{{ formatWishAuthor(wish) }}</p>
         </div>
       </article>
 
@@ -256,6 +256,7 @@ button {
   font-size: 22px;
   font-weight: 600;
   line-height: 40px;
+  overflow-wrap: anywhere;
 }
 
 .controls {

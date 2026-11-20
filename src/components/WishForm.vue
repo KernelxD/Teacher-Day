@@ -4,13 +4,30 @@ import { gsap } from "gsap";
 import { Draggable } from "gsap/Draggable";
 import InertiaPlugin from "gsap/InertiaPlugin";
 import TagInput from "./TagInput.vue";
-import FieldInput from "./FieldInput.vue";
-import { addWish } from "./Control.vue";
+import { addWish, readAllWishes } from "./Control.vue";
+import { boardTeachers } from "../lib/wishes.js";
+import TeacherTitleReminder from "./TeacherTitleReminder.vue";
+import { CAMPUSES } from "../lib/campus.js";
+import { useCampusSelection } from "../lib/useCampusSelection.js";
 
 const author = ref("");
+const { campus, markCampusChosen } = useCampusSelection();
 const message = ref("");
 const invitedBy = "VTEC";
 const tags = ref([]); //selected teacher
+const teacherOptions = ref([]);
+const teacherCampuses = ref({});
+const tagInput = ref(null);
+const sending = ref(false);
+
+onMounted(async () => {
+  try {
+    const wishes = await readAllWishes();
+    const teachers = boardTeachers(wishes.map((wish) => ({ to: wish.target || [], campus: wish.campus, recipientCampus: wish.recipientCampus })));
+    teacherOptions.value = teachers.map(({ name }) => name).sort((a, b) => a.localeCompare(b, "vi"));
+    teacherCampuses.value = Object.fromEntries(teachers.map(({ key, campuses }) => [key, campuses]));
+  } catch { /* New names remain available when suggestions cannot be loaded. */ }
+});
 
 const errors = reactive({
   author: "",
@@ -60,17 +77,23 @@ function validateForm() {
   return isValid.value;
 }
 
-function handleSubmit() {
+async function handleSubmit() {
+  if (sending.value) return;
+  try { tags.value = tagInput.value.getRecipients(); }
+  catch (failure) { errors.tags = failure.message; return; }
   if (!validateForm()) return;
   const payload = {
     author: author.value,
+    campus: campus.value,
     invitedBy: invitedBy || null,
     message: message.value,
     target: tags.value,
   };
 
-  addWish(payload);
-  console.log(payload);
+  sending.value = true;
+  try { await addWish(payload); }
+  catch { errors.message = "Chưa gửi được lời chúc. Kiểm tra kết nối rồi thử lại nhé."; }
+  finally { sending.value = false; }
 }
 
 onMounted(() => {
@@ -150,11 +173,13 @@ onUnmounted(() => {
       </div>
       <div class="decorative-note" id="d2">Ghi đầy đủ họ tên và lời chúc
 Đảm bảo lời chúc lễ phép, tuân thủ nội quy Vinschool</div>
-      <form class="container" @submit.prevent="handleSubmit">
+      <form class="container" @submit.prevent="handleSubmit()">
         <div class="form-section">
           <label for="author">Tên người viết</label>
-          <FieldInput v-model="author" form-name="name" id="author" />
-          <label class="error-element">{{ errors.author }}</label>
+          <div class="input">
+            <input id="author" v-model="author" class="input-field" type="text" autocomplete="name" />
+          </div>
+          <label v-if="errors.author" class="error-element">{{ errors.author }}</label>
         </div>
         <div class="form-section">
           <label for="message">Lời chúc của bạn tới thầy cô</label>
@@ -164,16 +189,28 @@ onUnmounted(() => {
             form-name="message"
             id="message"
           ></textarea>
-          <label class="error-element">{{ errors.message }}</label>
+          <label v-if="errors.message" class="error-element">{{ errors.message }}</label>
         </div>
         <div class="form-section">
-          <label for="teacher">Tên giáo viên cụ thể nếu muốn</label>
-          <TagInput v-model="tags" form-name="teacher" id="teacher" />
-          <label class="error-element">{{ errors.tags }}</label>
+          <div class="recipient-row">
+            <div class="form-section">
+              <label for="teacher">Gửi tới thầy cô</label>
+              <TagInput ref="tagInput" v-model="tags" form-name="teacher" input-id="teacher" :options="teacherOptions" :campus="campus" :campuses-by-teacher="teacherCampuses" />
+              <label v-if="errors.tags" class="error-element">{{ errors.tags }}</label>
+            </div>
+            <div class="form-section">
+              <label for="campus">Cơ sở</label>
+              <select id="campus" v-model="campus" @change="markCampusChosen">
+                <option value="">Chọn cơ sở</option>
+                <option v-for="option in CAMPUSES" :key="option" :value="option">{{ option }}</option>
+              </select>
+            </div>
+          </div>
+          <TeacherTitleReminder />
         </div>
         <!-- Attached ref="btnRef" to link element with script -->
-        <button ref="btnRef" class="submit-button" type="submit">
-          <label ref="txtRef" class="submit-button-label">Gửi lời chúc</label>
+        <button ref="btnRef" class="submit-button" type="submit" :disabled="sending">
+          <label ref="txtRef" class="submit-button-label">{{ sending ? "Đang gửi…" : "Gửi lời chúc" }}</label>
         </button>
       </form>
     </div>
@@ -217,6 +254,55 @@ main {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+}
+
+.recipient-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.6fr);
+  align-items: start;
+  gap: var(--space-md);
+}
+
+.recipient-row .form-section {
+  min-width: 0;
+}
+
+.input {
+  display: flex;
+  align-items: center;
+  min-height: 45px;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--space-sm);
+}
+
+.input:focus-within {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.input-field {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+#campus {
+  min-width: 0;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 var(--space-sm);
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--space-sm);
+  font: inherit;
+  font-size: 0.875rem;
 }
 
 #message {

@@ -1,77 +1,56 @@
 <script setup>
 // "Tất cả lời chúc": every wish in one column per teacher, newest first, with search and a teacher filter.
-// Teachers are grouped by slugify(name), the same key the teacher pages use, so "Cô Lan" and
-// "cô lan" land in one column.
+// Teacher identity ignores casing and extra spaces while preserving Vietnamese accents.
 import { computed, onMounted, ref } from "vue";
-import { slugify } from "../Control.vue";
-import { ACCENT, PALETTE, SOFT, TINTS, MINE_COLOR, fold, initials, joinNames } from "../../lib/wishes.js";
+import { ACCENT, PALETTE, MINE_COLOR, fold, formatWishAuthor, joinNames, summarizeRecipients, groupWishesByTeacher, boardTeachers } from "../../lib/wishes.js";
+import { CAMPUSES } from "../../lib/campus.js";
 
 const props = defineProps({
   all: { type: Array, required: true },
   filtered: { type: Array, required: true },
   mineId: { type: [String, Number], default: null },
   toneById: { type: Object, required: true },
+  preferredCampus: { type: String, default: "" },
 });
 const emit = defineEmits(["close", "compose"]);
 
 const query = defineModel("query", { type: String, default: "" });
 const teacher = defineModel("teacher", { type: String, default: "" });
+const campus = defineModel("campus", { type: String, default: "" });
 
-const teacherKey = (name) => slugify(name) || fold(name);
-
-// How many wishes each teacher has, keyed by slug, with the first spelling we saw.
-const teachers = computed(() => {
-  const byKey = {};
-  for (const wish of props.all) {
-    for (const key of new Set(wish.to.map(teacherKey))) {
-      if (!key) continue;
-      if (!byKey[key]) {
-        const name = wish.to.find((t) => teacherKey(t) === key);
-        byKey[key] = { key, name, count: 0 };
-      }
-      byKey[key].count++;
-    }
-  }
-  return Object.values(byKey).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "vi"));
-});
+// How many wishes each teacher has, keeping accents and the first spelling we saw.
+const teachers = computed(() => boardTeachers(props.all, props.preferredCampus));
 
 const columns = computed(() => {
-  const groups = {};
-  const newestFirst = [...props.filtered].reverse();
-  for (const wish of newestFirst) {
-    for (const key of new Set(wish.to.map(teacherKey))) {
-      if (!key || (teacher.value && key !== teacher.value)) continue;
-      (groups[key] = groups[key] || []).push(wish);
-    }
-  }
-
-  const shown = teachers.value.filter((t) => groups[t.key]?.length);
+  const groups = groupWishesByTeacher([...props.filtered].reverse());
+  const shown = teachers.value.filter((t) => groups.has(t.key) && (!teacher.value || t.key === teacher.value)
+    && (!campus.value || t.pinned || t.campuses.includes(campus.value)));
   const single = shown.length === 1;
 
-  return shown.map((t, i) => ({
+  return shown.map((t) => ({
     key: t.key,
     name: t.name,
-    count: groups[t.key].length,
-    tint: TINTS[i % TINTS.length],
+    pinned: t.pinned,
+    campuses: t.campuses,
+    count: groups.get(t.key).wishes.length,
     single,
-    cards: groups[t.key].map((wish) => {
+    cards: groups.get(t.key).wishes.map((wish) => {
       const mine = wish.id === props.mineId;
       const tone = props.toneById[wish.id] ?? 0;
       return {
         id: wish.id,
-        name: wish.name,
-        initials: initials(wish.name),
-        toLine: "gửi " + joinNames(wish.to),
+        name: formatWishAuthor(wish),
+        toLine: "gửi " + summarizeRecipients(wish.to, t.name),
+        fullToLine: "gửi " + joinNames(wish.to),
         content: wish.content,
         mine,
-        avatar: mine ? "#FFE7A3" : SOFT[tone],
         swatch: mine ? MINE_COLOR : PALETTE[tone],
       };
     }),
   }));
 });
 
-const hasFilter = computed(() => !!fold(query.value) || !!teacher.value);
+const hasFilter = computed(() => !!fold(query.value) || !!teacher.value || !!campus.value);
 
 const subtitle = computed(() => {
   const total = props.all.length;
@@ -83,6 +62,7 @@ const subtitle = computed(() => {
 function clearFilters() {
   query.value = "";
   teacher.value = "";
+  campus.value = "";
 }
 
 const searchInput = ref(null);
@@ -116,10 +96,19 @@ onMounted(() => closeButton.value?.focus());
       </div>
 
       <div class="filters" role="search">
-        <label for="board-q" class="sr-only">Tìm theo tên, thầy cô hoặc nội dung</label>
+        <label for="board-q" class="sr-only">Tìm theo tên, lớp, thầy cô hoặc nội dung</label>
         <div class="field search-field">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5E5874" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg>
-          <input id="board-q" ref="searchInput" v-model="query" type="search" autocomplete="off" placeholder="Tìm theo tên, thầy cô, nội dung…" />
+          <input id="board-q" ref="searchInput" v-model="query" type="search" autocomplete="off" placeholder="Tìm theo tên, lớp, thầy cô, nội dung…" />
+        </div>
+
+        <label for="board-campus" class="sr-only">Lọc theo cơ sở</label>
+        <div class="field select-field">
+          <select id="board-campus" v-model="campus">
+            <option value="">Tất cả cơ sở</option>
+            <option v-for="option in CAMPUSES" :key="option" :value="option">{{ option }}</option>
+          </select>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#231B42" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
         </div>
 
         <label for="board-t" class="sr-only">Lọc theo thầy cô</label>
@@ -150,19 +139,30 @@ onMounted(() => closeButton.value?.focus());
               :aria-label="`${col.name}, ${col.count} lời chúc`"
             >
               <header class="column-header">
-                <h3>{{ col.name }}</h3>
-                <span class="count" :style="{ background: col.tint }">{{ col.count }}</span>
-                <button type="button" class="add" :aria-label="`Viết lời chúc cho ${col.name}`" @click="emit('compose', col.name)">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#231B42" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-                </button>
+                <div class="column-title">
+                  <span v-if="col.pinned" class="pin" role="img" aria-label="Được ghim cố định ở đầu" title="Được ghim cố định ở đầu">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6M10 3v6l-4 4v2h12v-2l-4-4V3M12 15v6" /></svg>
+                  </span>
+                  <div class="teacher-heading">
+                    <h3>{{ col.name }}</h3>
+                    <div v-if="col.campuses.length" class="campus-tags" aria-label="Cơ sở">
+                      <span v-for="school in col.campuses" :key="school" class="campus-tag"
+                        :class="{ 'campus-t37': school === CAMPUSES[0], 'campus-harmony': school === CAMPUSES[1] }"
+                        :title="school">{{ school === CAMPUSES[0] ? 'T37' : school }}</span>
+                    </div>
+                  </div>
+                  <span class="count">{{ col.count }}</span>
+                  <button type="button" class="add" :aria-label="`Viết lời chúc cho ${col.name}`" @click="emit('compose', col.name)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#231B42" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                  </button>
+                </div>
               </header>
               <div class="cards">
                 <article v-for="card in col.cards" :key="card.id" class="card" :class="{ mine: card.mine }">
                   <div class="card-head">
-                    <span class="avatar" aria-hidden="true" :style="{ background: card.avatar }">{{ card.initials }}</span>
                     <div class="who">
                       <span class="who-name">{{ card.name }}</span>
-                      <span class="who-to">{{ card.toLine }}</span>
+                      <span class="who-to" :title="card.fullToLine">{{ card.toLine }}</span>
                     </div>
                     <span class="swatch" aria-hidden="true" :style="{ background: card.swatch }"></span>
                   </div>
@@ -228,9 +228,9 @@ select {
   z-index: 20;
   display: flex;
   flex-direction: column;
-  background: rgba(246, 243, 252, 0.3);
-  backdrop-filter: blur(14px) saturate(1.1);
-  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  background: rgba(246, 243, 252, 0.9);
+  backdrop-filter: blur(20px) saturate(0.8);
+  -webkit-backdrop-filter: blur(20px) saturate(0.8);
   animation: fade 0.25s ease both;
 }
 
@@ -434,7 +434,7 @@ select {
   top: 0;
   z-index: 1;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   padding: 8px 8px 8px 14px;
   background: rgba(255, 255, 255, 0.66);
@@ -443,24 +443,67 @@ select {
   border-radius: 14px;
 }
 
+.column-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.teacher-heading {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.campus-tags {
+  flex: 0 0 auto;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.campus-tag {
+  padding: 2px 6px;
+  border-radius: 9999px;
+  background: #E9EBF8;
+  color: #5E5874;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.campus-t37 {
+  background: #FDEBCB;
+  color: #71531C;
+}
+
+.campus-harmony {
+  background: #D8F5E7;
+  color: #205B44;
+}
+
 .column-header h3 {
   margin: 0;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   font-size: 17px;
   font-weight: 800;
   line-height: 1.25;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+}
+
+.pin {
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: #71531C;
 }
 
 .count {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  padding: 2px 10px;
-  border-radius: 9999px;
+  padding: 2px 4px;
   font-size: 13px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -511,19 +554,6 @@ select {
   gap: 10px;
 }
 
-.avatar {
-  flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-}
-
 .who {
   flex: 1 1 auto;
   min-width: 0;
@@ -535,9 +565,7 @@ select {
   font-size: 14px;
   font-weight: 800;
   line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .who-to {

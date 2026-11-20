@@ -1,33 +1,30 @@
 <script setup>
 import { ref } from "vue";
+import TeacherNameInput from "./TeacherNameInput.vue";
+import { isValidTeacherName, resolveTeacherName, uniqueTeacherNames } from "../lib/teachers.js";
 
-const formName = defineProps({ formName: String });
-
-const placeholder = `Enter your ${formName.formName}'s name`;
+const props = defineProps({ formName: String, options: { type: Array, default: () => [] }, inputId: { type: String, default: "teacher" },
+  campus: { type: String, default: "" }, campusesByTeacher: { type: Object, default: () => ({}) } });
 const newTag = ref("");
 const tags = defineModel({type: Array, default: () => []});
+const error = ref("");
 
-function isValidName (str){
-  const regex = /^[^\p{P}\p{S}\d]+$/u;
-  
-  // Trim spaces and test the name
-  return regex.test(str.trim());
+function getRecipients() {
+  const pending = resolveTeacherName(newTag.value, props.options);
+  if (pending && !isValidTeacherName(pending)) throw new Error("Tên thầy cô chỉ gồm chữ cái; có thể thêm môn học hoặc vai trò trong ngoặc.");
+  return uniqueTeacherNames([...tags.value, pending], props.options);
 }
 
-function addTag(event) {
-  if (event.code == "Comma" || event.code == "Enter") {
-    event.preventDefault();
-    const val = newTag.value.trim();
-
-    if (val.length > 0 && !tags.value.includes(val) && isValidName(val)) {
-      tags.value.push(val);
-      newTag.value = "";
-    }
-  }
+function addTag(value) {
+  newTag.value = value;
+  try {
+    tags.value = getRecipients();
+    newTag.value = "";
+    error.value = "";
+  } catch (failure) { error.value = failure.message; }
 }
 
 function removeTag(index) {
-  console.log(index);
   tags.value.splice(index, 1);
 }
 
@@ -36,21 +33,20 @@ function removeLastTag() {
     tags.value.pop();
   }
 }
+
+defineExpose({ getRecipients });
 </script>
 <template>
-  <div class="tag-input">
-    <div v-for="(tag, index) in tags" :key="tag" class="tag">
-      {{ tag }}
-      <span @click="removeTag(index)">&times;</span>
+  <div>
+    <div class="tag-input">
+      <div v-for="(tag, index) in tags" :key="tag" class="tag">
+        {{ tag }}
+        <button type="button" :aria-label="`Bỏ ${tag}`" @click="removeTag(index)">&times;</button>
+      </div>
+      <TeacherNameInput :id="inputId" v-model="newTag" :options="options" :selected="tags" :campus="campus" :campuses-by-teacher="campusesByTeacher"
+        @commit="addTag" @remove-last="removeLastTag" />
     </div>
-    <input
-      v-model="newTag"
-      @keydown="addTag"
-      @keydown.delete="removeLastTag"
-      class="tag-input-field"
-      type="text"
-      :placeholder
-    />
+    <p v-if="error" class="tag-error" role="alert">{{ error }}</p>
   </div>
 </template>
 <style scoped>
@@ -94,7 +90,12 @@ function removeLastTag() {
   gap: var(--space-sm);
 }
 
-.tag > span {
+.tag > button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   cursor: pointer;
 }
+.tag-error { color: #B42318; font-size: 14px; }
 </style>

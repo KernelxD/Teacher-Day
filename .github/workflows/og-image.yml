@@ -1,0 +1,75 @@
+# Keeps the link-preview image (og:image) showing the current wish count.
+# Every 15 minutes it compares the count in Firestore with the one the live preview shows.
+# When they differ, it rebuilds the site, screenshots /og, and redeploys Firebase Hosting.
+# Setup and troubleshooting: docs/preview-image.md
+name: Update preview image
+
+on:
+  schedule:
+    - cron: "4,19,34,49 * * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Deploy even if the live site runs different code than this branch
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: og-image
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      count: ${{ steps.check.outputs.count }}
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - id: check
+        run: node scripts/og-image.mjs check
+
+  update:
+    needs: check
+    if: needs.check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Make sure the live site runs this code
+        if: ${{ !inputs.force }}
+        run: node scripts/og-image.mjs guard
+      - name: Render the preview image
+        run: node scripts/og-image.mjs render --count "$COUNT"
+        env:
+          COUNT: ${{ needs.check.outputs.count }}
+      - name: Deploy to Firebase Hosting
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VTEC_TEACHER_DAY }}
+          COUNT: ${{ needs.check.outputs.count }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::error::Missing the FIREBASE_SERVICE_ACCOUNT_VTEC_TEACHER_DAY secret. See docs/preview-image.md."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-key.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-key.json"
+          npx --yes firebase-tools@13.15.0 deploy --only hosting --project vtec-teacher-day \
+            --non-interactive --message "Preview image: $COUNT wishes"

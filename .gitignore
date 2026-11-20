@@ -32,3 +32,6 @@ CLAUDE.md
 
 # Firebase deploy cache
 .firebase/
+
+# Local database snapshots (never publish to the application repository)
+backups/

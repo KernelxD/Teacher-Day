@@ -1,19 +1,25 @@
 <script setup>
 // The tree itself: sky, hills, the drawn tree, and one small swaying tag per wish.
 // Hovering a tag shows a quick preview; clicking it asks the parent to open that wish.
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { TREE, TAG_SPOTS } from "../../lib/tree.js";
-import { PALETTE, joinNames } from "../../lib/wishes.js";
+import { PALETTE, formatWishAuthor, joinNames, summarizeRecipients } from "../../lib/wishes.js";
+import { useWishPreviews } from "../../lib/useWishPreviews.js";
 
 const props = defineProps({
   wishes: { type: Array, required: true },
   mineId: { type: [String, Number], default: null },
   toneById: { type: Object, required: true },
   peekEnabled: { type: Boolean, default: true },
+  preferredCampus: { type: String, default: "" },
 });
 const emit = defineEmits(["open"]);
 
-const peekId = ref(null);
+const { peekId, hover, leave, clear } = useWishPreviews({
+  wishes: () => props.wishes,
+  preferredCampus: () => props.preferredCampus,
+  enabled: () => props.peekEnabled,
+});
 
 const tags = computed(() =>
   props.wishes.map((wish, i) => {
@@ -22,7 +28,7 @@ const tags = computed(() =>
     return {
       id: wish.id,
       mine,
-      label: `Lời chúc của ${wish.name} gửi ${joinNames(wish.to)}`,
+      label: `Lời chúc của ${formatWishAuthor(wish)} gửi ${joinNames(wish.to)}`,
       style: {
         left: spot.left,
         top: spot.top,
@@ -47,19 +53,16 @@ const peek = computed(() => {
   // Tags near the top of the tree show the preview below them, the rest above.
   const shift = spot.y < 210 ? "translate(-50%, calc(2.2cqw + 12px))" : "translate(-50%, calc(-100% - 14px))";
   return {
-    name: wish.name,
-    to: joinNames(wish.to),
+    id: wish.id,
+    name: formatWishAuthor(wish),
+    to: summarizeRecipients(wish.to),
     content: wish.content,
-    style: { left: spot.left, top: spot.top, transform: shift },
+    style: { '--peek-left': spot.left, top: spot.top, transform: shift },
   };
 });
 
-function leave(id) {
-  if (peekId.value === id) peekId.value = null;
-}
-
 function open(id) {
-  peekId.value = null;
+  clear();
   emit("open", id);
 }
 </script>
@@ -128,7 +131,7 @@ function open(id) {
           :aria-label="tag.label"
           :style="tag.style"
           @click="open(tag.id)"
-          @mouseenter="peekId = tag.id"
+          @mouseenter="hover(tag.id)"
           @mouseleave="leave(tag.id)"
         >
           <span class="swing" aria-hidden="true" :style="tag.swingStyle">
@@ -137,16 +140,18 @@ function open(id) {
         </button>
       </div>
 
-      <div v-if="peek" class="peek" aria-hidden="true" :style="peek.style">
-        <dl>
-          <dt>Người gửi</dt>
-          <dd class="peek-name">{{ peek.name }}</dd>
-          <dt>Gửi tới</dt>
-          <dd class="peek-to">{{ peek.to }}</dd>
-          <dt>Lời chúc</dt>
-          <dd class="peek-content">{{ peek.content }}</dd>
-        </dl>
-      </div>
+      <Transition name="peek-fade" mode="out-in">
+        <div v-if="peek" :key="peek.id" class="peek" aria-hidden="true" :style="peek.style">
+          <dl>
+            <dt>Người gửi</dt>
+            <dd class="peek-name">{{ peek.name }}</dd>
+            <dt>Gửi tới</dt>
+            <dd class="peek-to">{{ peek.to }}</dd>
+            <dt>Lời chúc</dt>
+            <dd class="peek-content">{{ peek.content }}</dd>
+          </dl>
+        </div>
+      </Transition>
     </div>
   </div>
 </template>
@@ -249,15 +254,27 @@ div {
 }
 
 .peek {
+  --peek-half-width: min(150px, calc(50vw - 16px));
   position: absolute;
+  /* Keep previews on screen when the mobile tree is wider than the viewport. */
+  left: clamp(calc(50% - 50vw + 16px + var(--peek-half-width)), var(--peek-left), calc(50% + 50vw - 16px - var(--peek-half-width)));
   z-index: 6;
-  width: 300px;
+  width: min(300px, calc(100vw - 32px));
   padding: 16px 18px;
   background: #FFFFFF;
   border-radius: 16px;
   box-shadow: 0 14px 34px rgba(35, 27, 66, 0.22);
   pointer-events: none;
-  animation: peek 0.15s ease both;
+}
+
+.peek-fade-enter-active,
+.peek-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.peek-fade-enter-from,
+.peek-fade-leave-to {
+  opacity: 0;
 }
 
 .peek dl {
@@ -279,6 +296,8 @@ div {
   margin: 0;
   font-size: 14px;
   font-weight: 800;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .peek .peek-to {
@@ -312,11 +331,6 @@ div {
 @keyframes breathe {
   0%, 100% { transform: rotate(-0.25deg); }
   50% { transform: rotate(0.25deg); }
-}
-
-@keyframes peek {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 /* On phones the tree is drawn wider than the screen so the crown fills it. */
